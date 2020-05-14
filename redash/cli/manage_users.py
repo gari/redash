@@ -125,12 +125,23 @@ def disable_users(user_list, organization='default'):
         models.User.disabled_at == None
         ).all()
     for u in all_users:
+    
         if u.email not in user_list:
-            print("> Allarm Try to disable user {}".format(u.email))
+            print("> ALARM Try to disable user {}".format(u.email))
             u.disable()
             models.db.session.add(u)
             models.db.session.commit()
 
+    all_users = models.User.query.filter(
+        models.User.org == org,
+        models.User.disabled_at != None
+        ).all()
+    for u in all_users:
+        if u.email in user_list:
+            print("> Found disable user {}, try to enable".format(u.email))
+            u.disabled_at = None
+            models.db.session.add(u)
+            models.db.session.commit()
 
 
 def check_users_groups(email, groups, organization='default'):
