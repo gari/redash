@@ -1,0 +1,75 @@
+---
+inviter_user:
+  email: admin@admin.org
+
+servers:
+  default: &default
+    type: clickhouse
+    dbname: logs
+    timeout: 1800
+    url: http://127.126.124.1:8123
+
+datastores:
+  - name: server
+    user: fuckuser
+    password: testPassword
+    <<: *default
+  - name: server_AS
+    user: asdasdsadasdsa
+    password: FDSA:DKLDS
+    <<: *default
+  - name: server_CANAL
+    user: fuckuser2
+    password: testPassword
+    <<: *default
+  - name: server_SWA
+    user: fuckuser4
+    password: testPassword
+    <<: *default
+
+
+
+
+groups:
+  - name: AS
+    datastores:
+    - server
+    - server_CANALasddasf
+  - name: CANAL
+    datastores:
+    - server_CANAL
+  - name: SWA
+    datastores:
+    - server_SWA
+
+
+users:
+  - email: admin@admin.com
+    admin: true
+    group:
+    - admin
+  - email: asdsaddsa@aaaabbbbbbcccc-exmaple.com
+    group:
+    - AS
+  - email: test@aaaabbbbbbcccc-exmaple.com
+    group:
+    - AS
+    - CANAL
+  - email: test2@aaaabbbbbbcccc-exmaple.com
+    group:
+    - CANAL
+  - email: test2adsdsa@aaaabbbbbbcccc-exmaple.com
+    group:
+    - CANAL
+  - email: 123@aaaabbbbbbcccc-exmaple.com
+    group:
+    - CANAL
+  - email: bbb@aaaabbbbbbcccc-exmaple.com
+    group:
+    - CANAL
+  - email: ffff@aaaabbbbbbcccc-exmaple.com
+    group:
+    - AS
+  - email: dddd@aaaabbbbbbcccc-exmaple.com
+    group:
+    - AS
