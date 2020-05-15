@@ -5,14 +5,15 @@ inviter_user:
 servers:
   default: &default
     type: clickhouse
-    dbname: logs
+    dbname: test
     timeout: 1800
     url: http://127.126.124.1:8123
 
 datastores:
   - name: server
-    user: fuckuser
+    user: fuckuser12312321
     password: testPassword
+    dbname: default
     <<: *default
   - name: server_AS
     user: asdasdsadasdsa
@@ -26,7 +27,11 @@ datastores:
     user: fuckuser4
     password: testPassword
     <<: *default
-
+  - name: dasdsads
+    user: fuckuser12312321
+    password: testPassword
+    dbname: default
+    <<: *default
 
 
 
@@ -34,15 +39,25 @@ groups:
   - name: AS
     datastores:
     - server
-    - server_CANALasddasf
+    # - server_CANALasddasf
   - name: CANAL
     datastores:
     - server_CANAL
   - name: SWA
     datastores:
     - server_SWA
-
-
+    # - server_AS
+  - name: SWA_TEST
+    datastores:
+    # - server_SWA
+    - server_AS
+  - name: SWA_TEST1
+    datastores:
+    - server_SWA
+    - server
+    - server_AS
+    - dasdsads
+# 
 users:
   - email: admin@admin.com
     admin: true
@@ -71,6 +86,14 @@ users:
     group:
     - AS
   - email: dddd@aaaabbbbbbcccc-exmaple.com
+    group:
+    - AS
+    - CANAL
+  - email: cccc@aaaabbbbbbcccc-exmaple.com
+    group:
+    - AS
+    - CANAL
+  - email: ccasdasdcc@aaaabbbbbbcccc-exmaple.com
     group:
     - AS
     - CANAL

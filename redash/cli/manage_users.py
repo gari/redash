@@ -47,7 +47,7 @@ def manage_from_yaml(config, organization="default"):
     with open(config) as f:
         dataMap = yaml.safe_load(f)
 
-    print('{}'.format(dataMap))
+    # print('{}'.format(dataMap))
 
     print("====== Datastores ======")
     for datastore in dataMap['datastores']:
@@ -55,7 +55,7 @@ def manage_from_yaml(config, organization="default"):
         print('=======')
         if check_datasource_exist(name=datastore['name']):
             # TODO: FIX
-            update_datasource(name=datastore['name'])
+            update_datasource(name=datastore['name'], values=datastore)
         else:
             print("> Not exist datastore {}".format(datastore['name']))
             new_datasource(
@@ -206,7 +206,7 @@ def create(
     print("Admin: %r" % is_admin)
 
     org = models.Organization.get_by_slug(organization)
-    groups = build_groups(org, groups, is_admin)
+    groups = build_groups_fff(org, groups, is_admin)
 
     user = models.User(org=org, email=email, name=name, group_ids=groups)
     if not password:
@@ -289,10 +289,6 @@ def check_groups_datastore(group_name=None, datastore_list=None, organization='d
 
     org = models.Organization.get_by_slug(organization)
 
-    # data_source = models.DataSource.query.filter(
-    #     models.Group.name == group_name,
-    #     models.Group.org == org
-    # ).all()
     group = models.Group.query.filter(
         models.Group.name == group_name,
         models.Group.org == org
@@ -304,15 +300,20 @@ def check_groups_datastore(group_name=None, datastore_list=None, organization='d
     for d in data_sources:
         base_datasourse.append(d.name)
 
-    for new_datasource in datastore_list:
-        if new_datasource not in base_datasourse:
-            try:
-                assign_datastore_to_group(
-                    group_name=group_name,
-                    datastore_name=new_datasource
-                )
-            except NoResultFound:
-                print("> ERROR NoResultFound for datastore {}".format(new_datasource))
+    # print("***********************")
+    # print("base_datasourse: {}".format(base_datasourse))
+    # print("***********************")
+
+    # for new_datasource in datastore_list:
+    #     if new_datasource not in base_datasourse:
+    #         print("new_datasource: {}".format(new_datasource))
+    #         try:
+    #             assign_datastore_to_group(
+    #                 group_name=group_name,
+    #                 datastore_name=new_datasource
+    #             )
+    #         except NoResultFound:
+    #             print("> ERROR NoResultFound for datastore {}".format(new_datasource))
     
     diff1 = list(set(base_datasourse) - set(datastore_list))
     diff2 = list(set(datastore_list) - set(base_datasourse))
@@ -321,25 +322,37 @@ def check_groups_datastore(group_name=None, datastore_list=None, organization='d
         print("> Found bad datasorse in group {}".format(group_name))
         for d in diff1:
             print("> Try to delete datastore {} for group {}".format(d, group_name))
-            data_sources = models.DataSource.query.join(models.DataSourceGroup).filter(
-                models.DataSourceGroup.group == group,
-                models.Group.org == org,
-                models.DataSource.name == d,
+            # data_sources = models.DataSource.query.join(models.DataSourceGroup).filter(
+            #     # models.DataSourceGroup.group == group,
+            #     models.Group.org == org,
+            #     models.DataSource.name == d,
+            # ).one_or_none()
+            data_sources = models.DataSource.query.filter(
+
+                models.DataSource.org == org,
+                models.DataSource.name == d
             ).one_or_none()
 
             data_sources.remove_group(group)
+            models.db.session.commit()
+
 
     if len(diff2) > 0:
         print("> Not Found datasorse in group {}".format(group_name))
         for d in diff2:
             print("> Try to add datastore {} for group {}".format(d, group_name))
             try:
-                data_sources = models.DataSource.query.join(models.DataSourceGroup).filter(
-                    models.DataSourceGroup.group == group,
-                    models.Group.org == org,
+                data_sources = models.DataSource.query.filter(
+                      models.DataSource.org == org,
                     models.DataSource.name == d,
                 ).one_or_none()
+                # data_sources = models.DataSource.query.join(models.DataSourceGroup).filter(
+                #     # models.DataSourceGroup.group == group,
+                #     # models.Group.org == org,
+                #     models.DataSource.name == d,
+                # ).one_or_none()
                 data_sources.add_group(group)
+                models.db.session.commit()
             except AttributeError as e:
                 print("Error {} for {}".format(e, d))
                 
@@ -353,29 +366,36 @@ def assign_datastore_to_group(group_name=None, datastore_name=None, organization
         print("> group_name is None or datastore_name is None")
         return False
 
+    # print('***************************************************************************')
+    # print("group_name: {}".format(group_name))
+    # print("datastore_name: {}".format(datastore_name))
+    # print('***************************************************************************')
     org = models.Organization.get_by_slug(organization)
     group = models.Group.query.filter(
         models.Group.name == group_name,
         models.Group.org == org
     ).one_or_none()
-
-    # print(group.id)
-
-    data_source = models.DataSource.get_by_name(datastore_name)
-    # print(data_source)
-    # print(data_source.groups)
-    if len(data_source.groups) > 0:
-        for d in data_source.groups:
-            if group.id == d:
-                print('> Group {} already assigment to datastore "{}"'.format(
-                    group_name, datastore_name
-                ))
-            else:
-                data_source_group = data_source.add_group(group)
-                models.db.session.commit()
-    else:
-        data_source_group = data_source.add_group(group)
+    print(datastore_name)
+    data_source = models.DataSource.query.filter(
+        models.DataSource.name == datastore_name,
+        models.DataSource.org == org
+    ).one_or_none()
+    try:
+        print("Try to add or check new datastore with id {} and name {}".format(data_source.id, datastore_name.name))
+    except AttributeError:
+        print("Can't find datastore: {}".format(datastore_name))
+        return
+    # print(group.data_sources)
+    ds_grp_id = []
+    if len(group.data_sources) > 0:
+        for ds in group.data_sources:
+            ds_grp_id.append(ds.id)
+    
+    if data_source.id not in ds_grp_id:
+        print("New datastore {} to group {}".format(data_source.name, group.name))
+        data_source.add_group(group)
         models.db.session.commit()
+
 
 
 
@@ -426,13 +446,23 @@ def check_exist_group(name=None, organization='default'):
         return False
 
 
-def update_datasource(name, options=None, organization='default'):
+def update_datasource(name, values=None, organization='default'):
     '''
     Update datastore
     '''
     # TODO: 
     print("> Update datastore " + name)
-    print("> TODO: Update datastore " + name)
+    # print("> TODO: Update datastore " + name)
+    try:
+        org = models.Organization.get_by_slug(organization)
+        data_source = models.DataSource.query.filter(
+            models.DataSource.name == name,
+            models.DataSource.org == org).first()
+        if data_source:
+            return True
+    except NoResultFound:
+        print("> Couldn't find data source named: {}".format(name))
+        return False
 
 
 def check_datasource_exist(name=None, organization='default'):
@@ -475,7 +505,7 @@ def new_datasource(name=None, type=None, options=None, values=None, organization
     query_runner = query_runners[type]
     schema = query_runner.configuration_schema()
 
-    print('00000000')
+    # print('00000000')
     print(schema)
 
     if options is None:
@@ -523,11 +553,3 @@ def new_datasource(name=None, type=None, options=None, values=None, organization
         org=models.Organization.get_by_slug(organization))
     models.db.session.commit()
     print("Id: {}".format(data_source.id))
-
-
-# def validate_data_source_type(type):
-#     if type not in query_runners.keys():
-#         print("Error: the type \"{}\" is not supported (supported types: {})."
-#                .format(type, ", ".join(query_runners.keys())))
-#         print("OJNK")
-#         exit(1)
