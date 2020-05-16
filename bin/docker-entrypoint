@@ -4,7 +4,11 @@ set -e
 ##############
 # USE .env file
 TEMP_ENV_FILE=`mktemp /tmp/redash_env.XXXXXX`
-sed 's/^REDASH/export REDASH/' .env > $TEMP_ENV_FILE
+FILE='/usr/local/etc/.env'
+if [[ ! -f "$FILE"  ]]; then
+  FILE='.env'
+fi
+sed 's/^REDASH/export REDASH/' $FILE > $TEMP_ENV_FILE
 source $TEMP_ENV_FILE
 rm $TEMP_ENV_FILE
 ###############
