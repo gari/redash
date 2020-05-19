@@ -81,7 +81,7 @@ def manage_from_yaml(config, organization="default"):
         if not user_exist(email=dataMap['inviter_user']['email']):
             create(
                 email=dataMap['inviter_user']['email'],
-                name=dataMap['inviter_user']['email'].split('@')[0],
+                name=dataMap['inviter_user']['email'],
                 groups="admin",
                 password=randomString(30),
                 is_admin=True
@@ -98,12 +98,12 @@ def manage_from_yaml(config, organization="default"):
             except KeyError:
                 user['admin'] = False
             if not user_exist(email=user['email']):
-                name = user['email'].split('@')[0]
+                # name = user['email'].split('@')[0]
                 grp = ",".join(user['group'])
-                print(grp)
+                # print(grp)
                 invite(
                     email=user['email'],
-                    name=name,
+                    name=user['email'],
                     groups=grp,
                     is_admin=user['admin'],
                     inviter_email=dataMap['inviter_user']['email']
